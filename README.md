@@ -14,7 +14,7 @@ go get -u github.com/zhukovrost/cadv_logger
 package main
 
 import (
-	"github.com/zhukovrost/cadv_logger"
+	logger "github.com/zhukovrost/cadv_logger"
 	"go.uber.org/zap"
 	"time"
 )
