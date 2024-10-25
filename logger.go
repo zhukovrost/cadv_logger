@@ -17,13 +17,20 @@ func New(output string, debugLevel bool) *zap.Logger {
 	}
 
 	// Дефолтный вывод - консоль
-	var writeSyncer zapcore.WriteSyncer
-	writeSyncer = os.Stdout
+	var writeSyncers []zapcore.WriteSyncer
 
-	// Создаем конфигурацию для вывода в файл
-	if output != "" && output != "standard" && output != "std" {
-		file, _ := os.Create(output)
-		writeSyncer = zapcore.AddSync(file)
+	// Если файл вывода не задан, используем стандартный вывод
+	if output == "" || output == "standard" || output == "std" {
+		writeSyncers = append(writeSyncers, zapcore.AddSync(os.Stdout))
+	} else {
+		// Создаем файл для логирования
+		file, err := os.Create(output)
+		if err != nil {
+			// Обработка ошибки, если файл не может быть создан
+			zap.NewNop() // Используем заглушку, если не можем создать логгер
+			return nil
+		}
+		writeSyncers = append(writeSyncers, zapcore.AddSync(file))
 	}
 
 	// Настраиваем форматирование лога с разделением по уровням и датой
@@ -35,8 +42,8 @@ func New(output string, debugLevel bool) *zap.Logger {
 
 	// Настраиваем вывод в консоль и файл
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),                                // Формат JSON
-		zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), writeSyncer), // В консоль и файл
+		zapcore.NewJSONEncoder(encoderConfig),        // Формат JSON
+		zapcore.NewMultiWriteSyncer(writeSyncers...), // Используем массив синхронизаторов
 		logLevel, // Уровень логов
 	)
 
